@@ -27,7 +27,6 @@
         .stats-table th { color: var(--poodle-accent); padding: 5px; border-bottom: 1px solid var(--poodle-light); }
         .stats-table td { padding: 8px 5px; border-bottom: 1px solid #f9f9f9; }
 
-        /* 方塊選擇器 */
         .box-selector { display: flex; gap: 8px; margin: 10px 0; }
         .box-item { flex: 1; padding: 12px 5px; border: 2px solid var(--poodle-light); border-radius: 12px; text-align: center; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .box-item.active { border-color: var(--poodle-brown); color: var(--white); background: var(--poodle-brown); }
@@ -38,7 +37,6 @@
 
         .session-item { padding: 18px; background: var(--white); border-radius: 15px; margin-bottom: 12px; border: 1px solid var(--poodle-light); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         
-        /* 回合編號樣式 */
         .round-num { display: inline-block; width: 32px; height: 32px; line-height: 32px; background: var(--poodle-light); color: var(--poodle-brown); border-radius: 50%; text-align: center; font-weight: bold; margin-right: 10px; font-size: 0.75rem; flex-shrink: 0; }
         .history-item { border-bottom: 1px solid #efebe9; padding: 12px 0; font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between; }
         .history-item.deleted { opacity: 0.4; filter: grayscale(1); }
@@ -57,16 +55,14 @@
                 <div class="box-item" onclick="setMe('E', this)">我是 E</div>
                 <div class="box-item" onclick="setMe('D', this)">我是 D</div>
             </div>
-            <p id="meDisplay" style="text-align:center; font-size:0.85rem; color:var(--poodle-brown); margin:5px 0 0 0;">(尚未選擇身分)</p>
+            <p id="meDisplay" style="text-align:center; font-size:0.85rem; color:var(--poodle-brown); margin:5px 0 0 0;">(進入賽局前請先選擇身分)</p>
         </div>
 
         <div class="card">
             <h3>🐾 第二步：進入或新增賽局</h3>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
-                <input type="text" id="newSessionInput" placeholder="新賽局名稱 (如 0101)" style="padding:12px; border-radius:10px; border:1px solid var(--poodle-light);">
-                <div style="font-size:0.9rem;">
-                    底分：<input type="number" id="baseScoreInput" value="10" style="width:70px; padding:8px; border-radius:8px; border:1px solid var(--poodle-light);">
-                </div>
+                <input type="text" id="newSessionInput" placeholder="賽局名稱 (如 0101)" style="padding:12px; border-radius:10px; border:1px solid var(--poodle-light);">
+                <div style="font-size:0.9rem;">底分：<input type="number" id="baseScoreInput" value="10" style="width:70px; padding:8px; border-radius:8px; border:1px solid var(--poodle-light);"></div>
                 <button class="btn-main" onclick="createSession()">建立新賽局</button>
             </div>
         </div>
@@ -75,7 +71,7 @@
     </div>
 
     <div id="gamePage" class="page">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <button class="btn-back" onclick="showLobby()">⬅ 返回大廳</button>
             <span id="headerMe" style="font-size:0.9rem; color:var(--poodle-brown); font-weight:bold;">操作者：-</span>
         </div>
@@ -98,7 +94,7 @@
         </div>
 
         <div class="card">
-            <h3>🃏 提交紀錄</h3>
+            <h3>🃏 提交回合</h3>
             <div style="font-size:0.85rem;">地主：</div>
             <div class="box-selector" id="landlordSelector">
                 <div class="box-item" onclick="setLandlord('A', this)">A</div>
@@ -122,16 +118,17 @@
                 <input type="range" id="bombs" min="0" max="7" value="0" style="width:100%" oninput="bombVal.innerText=this.value">
             </div>
 
-            <button class="btn-main" onclick="submitRound()">提交回合</button>
+            <button class="btn-main" onclick="submitRound()">提交紀錄</button>
         </div>
 
         <div class="card">
-            <h3>📜 歷史紀錄</h3>
+            <h3>📜 本局歷史紀錄</h3>
             <div id="roundHistory"></div>
         </div>
     </div>
 
 <script>
+    // --- Alvin 的連線資訊 ---
     const SB_URL = "https://mmnauzvhnguffpmevrup.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tbmF1enZobmd1ZmZwbWV2cnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MjI1NjcsImV4cCI6MjA4MzE5ODU2N30.8GUyft8yVecvju7ecjcBwt1j2aqDL-WjThLA17iOcoE";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -154,16 +151,17 @@
         `).join('') || "目前無賽局";
     }
 
+    // 大廳身分選擇
     function setMe(v, el) { 
         myName = v; 
         document.querySelectorAll('#lobbyMeSelector .box-item').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        document.getElementById('meDisplay').innerText = `已選擇身分：${v}`;
+        document.getElementById('meDisplay').innerText = `已選擇身分：${v} (可進入賽局)`;
         document.getElementById('headerMe').innerText = `操作者：${v}`;
     }
 
     function checkAndEnter(name, base) {
-        if(!myName) return alert("請先在上方選擇您的身分！");
+        if(!myName) return alert("請先在大廳上方選擇您的身分 (我是 A/E/D)！");
         enterSession(name, base);
     }
 
@@ -189,82 +187,3 @@
         document.querySelectorAll('#landlordSelector .box-item').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
     }
-    function setWinner(v, el) { 
-        selectedWinner = v; 
-        document.querySelectorAll('#winnerSelector .box-item').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-    }
-
-    async function submitRound() {
-        if(!selectedLandlord || !selectedWinner) return alert("請選擇地主與結果");
-        const bombs = parseInt(document.getElementById('bombs').value);
-        const power = bombs + (document.getElementById('rocket').checked ? 1 : 0) + (document.getElementById('spring').checked ? 1 : 0);
-        await _supabase.from('history').insert([{
-            session_name: currentSession, added_by: myName, landlord: selectedLandlord,
-            win_loss: selectedWinner === 'landlord' ? '贏' : '輸',
-            points: currentBase * Math.pow(2, power)
-        }]);
-        refreshGameData();
-        // 重置
-        document.getElementById('rocket').checked = false;
-        document.getElementById('spring').checked = false;
-        document.getElementById('bombs').value = 0;
-        document.getElementById('bombVal').innerText = "0";
-    }
-
-    async function refreshGameData() {
-        const { data } = await _supabase.from('history').select('*').eq('session_name', currentSession).order('created_at', { ascending: true });
-        let s = { A: 0, E: 0, D: 0 };
-        let stats = { A: { w: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 }, E: { w: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 }, D: { w: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 } };
-        let rCounter = 0;
-
-        const processed = data?.map(h => {
-            if(!h.is_deleted) {
-                rCounter++;
-                const isLWin = h.win_loss === '贏';
-                const p = h.points;
-                ['A','E','D'].forEach(n => {
-                    stats[n].t++;
-                    if(h.landlord === n) { stats[n].lt++; if(isLWin) { stats[n].w++; stats[n].lw++; } }
-                    else { stats[n].ft++; if(!isLWin) { stats[n].w++; stats[n].fw++; } }
-                });
-                if(h.landlord === 'A') { s.A += (isLWin?p*2:-p*2); s.E += (isLWin?-p:p); s.D += (isLWin?-p:p); }
-                else if(h.landlord === 'E') { s.E += (isLWin?p*2:-p*2); s.A += (isLWin?-p:p); s.D += (isLWin?-p:p); }
-                else if(h.landlord === 'D') { s.D += (isLWin?p*2:-p*2); s.A += (isLWin?-p:p); s.E += (isLWin?-p:p); }
-                return { ...h, rNum: `R${rCounter}` };
-            }
-            return { ...h, rNum: 'DEL' };
-        });
-
-        document.getElementById('scoreA').innerText = s.A;
-        document.getElementById('scoreE').innerText = s.E;
-        document.getElementById('scoreD').innerText = s.D;
-
-        const rate = (w, t) => t === 0 ? "0%" : (w/t*100).toFixed(0) + "%";
-        document.getElementById('statsBody').innerHTML = ['A', 'E', 'D'].map(n => `
-            <tr><td><b>${n}</b></td><td>${stats[n].w}</td><td>${rate(stats[n].w, stats[n].t)}</td><td>${rate(stats[n].lw, stats[n].lt)}</td><td>${rate(stats[n].fw, stats[n].ft)}</td></tr>
-        `).join('');
-
-        document.getElementById('roundHistory').innerHTML = [...processed].reverse().map(h => `
-            <div class="history-item ${h.is_deleted ? 'deleted' : ''}">
-                <div style="display:flex; align-items:center;">
-                    <span class="round-num">${h.rNum}</span>
-                    <div><b>${h.landlord}${h.win_loss}</b> <span style="color:var(--poodle-brown); font-weight:bold;">(${h.win_loss==='贏'?'+':''}${h.points*2})</span></div>
-                </div>
-                ${!h.is_deleted ? `<button class="del-btn" onclick="deleteRound('${h.id}')">刪除</button>` : `<small style="color:var(--danger)">已刪除</small>`}
-            </div>
-        `).join('');
-    }
-
-    async function deleteRound(id) {
-        if(confirm("確定要刪除這回合？編號將自動回退。")) {
-            await _supabase.from('history').update({ is_deleted: true, deleted_by: myName }).eq('id', id);
-            refreshGameData();
-        }
-    }
-
-    fetchSessions();
-    _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, () => refreshGameData()).subscribe();
-</script>
-</body>
-</html>
