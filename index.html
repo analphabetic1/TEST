@@ -27,18 +27,19 @@
         .stats-table th { color: var(--poodle-accent); padding: 5px; border-bottom: 1px solid var(--poodle-light); }
         .stats-table td { padding: 8px 5px; border-bottom: 1px solid #f9f9f9; }
 
+        /* 方塊選擇器 */
         .box-selector { display: flex; gap: 8px; margin: 10px 0; }
-        .box-item { flex: 1; padding: 12px 5px; border: 2px solid var(--poodle-light); border-radius: 12px; text-align: center; cursor: pointer; font-weight: bold; }
+        .box-item { flex: 1; padding: 12px 5px; border: 2px solid var(--poodle-light); border-radius: 12px; text-align: center; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .box-item.active { border-color: var(--poodle-brown); color: var(--white); background: var(--poodle-brown); }
         .box-item.winner.active { border-color: #689F38; color: var(--white); background: #689F38; }
 
         .btn-main { background: var(--poodle-accent); color: var(--white); border: none; cursor: pointer; width: 100%; font-size: 1.1rem; font-weight: bold; padding: 15px; border-radius: 12px; margin-top: 15px; }
         .btn-back { background: transparent; color: var(--poodle-brown); border: 1px solid var(--poodle-brown); padding: 5px 15px; border-radius: 20px; cursor: pointer; margin-bottom: 10px; }
 
-        .session-item { padding: 18px; background: var(--white); border-radius: 15px; margin-bottom: 12px; border: 1px solid var(--poodle-light); cursor: pointer; display: flex; justify-content: space-between; }
+        .session-item { padding: 18px; background: var(--white); border-radius: 15px; margin-bottom: 12px; border: 1px solid var(--poodle-light); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         
-        /* 歷史紀錄 R 編號樣式 */
-        .round-num { display: inline-block; width: 35px; height: 35px; line-height: 35px; background: var(--poodle-light); color: var(--poodle-brown); border-radius: 50%; text-align: center; font-weight: bold; margin-right: 10px; font-size: 0.8rem; }
+        /* 回合編號樣式 */
+        .round-num { display: inline-block; width: 32px; height: 32px; line-height: 32px; background: var(--poodle-light); color: var(--poodle-brown); border-radius: 50%; text-align: center; font-weight: bold; margin-right: 10px; font-size: 0.75rem; flex-shrink: 0; }
         .history-item { border-bottom: 1px solid #efebe9; padding: 12px 0; font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between; }
         .history-item.deleted { opacity: 0.4; filter: grayscale(1); }
         .del-btn { background: #FFEBEE; color: var(--danger); border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
@@ -48,22 +49,39 @@
 
     <div id="lobbyPage" class="page active">
         <h2>🐾 鬥地主計分大廳</h2>
+        
         <div class="card">
-            <h3>新增賽局</h3>
+            <h3>👤 第一步：選擇我是誰</h3>
+            <div class="box-selector" id="lobbyMeSelector">
+                <div class="box-item" onclick="setMe('A', this)">我是 A</div>
+                <div class="box-item" onclick="setMe('E', this)">我是 E</div>
+                <div class="box-item" onclick="setMe('D', this)">我是 D</div>
+            </div>
+            <p id="meDisplay" style="text-align:center; font-size:0.85rem; color:var(--poodle-brown); margin:5px 0 0 0;">(尚未選擇身分)</p>
+        </div>
+
+        <div class="card">
+            <h3>🐾 第二步：進入或新增賽局</h3>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
-                <input type="text" id="newSessionInput" placeholder="賽局名稱 (如 0101)">
-                <div>底分：<input type="number" id="baseScoreInput" value="10" style="width:70px;"></div>
-                <button class="btn-main" onclick="createSession()">建立賽局</button>
+                <input type="text" id="newSessionInput" placeholder="新賽局名稱 (如 0101)" style="padding:12px; border-radius:10px; border:1px solid var(--poodle-light);">
+                <div style="font-size:0.9rem;">
+                    底分：<input type="number" id="baseScoreInput" value="10" style="width:70px; padding:8px; border-radius:8px; border:1px solid var(--poodle-light);">
+                </div>
+                <button class="btn-main" onclick="createSession()">建立新賽局</button>
             </div>
         </div>
+
         <div id="sessionList">連線中...</div>
     </div>
 
     <div id="gamePage" class="page">
-        <button class="btn-back" onclick="showLobby()">⬅ 返回大廳</button>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn-back" onclick="showLobby()">⬅ 返回大廳</button>
+            <span id="headerMe" style="font-size:0.9rem; color:var(--poodle-brown); font-weight:bold;">操作者：-</span>
+        </div>
         
         <div class="card" style="background: var(--poodle-cream); border:none;">
-            <h2 id="currentSessionTitle" style="margin:0 0 10px 0;">賽局詳情</h2>
+            <h2 id="currentSessionTitle" style="margin:0 0 10px 0; font-size:1.2rem;">賽局詳情</h2>
             <div class="score-board">
                 <div class="player">A<div id="scoreA" style="font-size:26px; font-weight:bold;">0</div></div>
                 <div class="player">E<div id="scoreE" style="font-size:26px; font-weight:bold;">0</div></div>
@@ -72,32 +90,39 @@
         </div>
 
         <div class="card">
-            <h3>📈 戰績統計 (本局)</h3>
+            <h3>📈 戰績統計</h3>
             <table class="stats-table">
-                <thead><tr><th>玩家</th><th>勝場</th><th>總勝率</th><th>地主勝率</th><th>農民勝率</th></tr></thead>
+                <thead><tr><th>玩家</th><th>勝場</th><th>勝率</th><th>地主勝率</th><th>農民勝率</th></tr></thead>
                 <tbody id="statsBody"></tbody>
             </table>
         </div>
 
         <div class="card">
-            <h3>🐾 提交新回合</h3>
-            <div class="box-selector" id="meSelector">
-                <div class="box-item" onclick="setMe('A', this)">我是 A</div>
-                <div class="box-item" onclick="setMe('E', this)">我是 E</div>
-                <div class="box-item" onclick="setMe('D', this)">我是 D</div>
-            </div>
+            <h3>🃏 提交紀錄</h3>
+            <div style="font-size:0.85rem;">地主：</div>
             <div class="box-selector" id="landlordSelector">
                 <div class="box-item" onclick="setLandlord('A', this)">A</div>
                 <div class="box-item" onclick="setLandlord('E', this)">E</div>
                 <div class="box-item" onclick="setLandlord('D', this)">D</div>
             </div>
+
+            <div style="margin:10px 0 5px 0; font-size:0.85rem;">結果：</div>
             <div class="box-selector" id="winnerSelector">
                 <div class="box-item winner" onclick="setWinner('landlord', this)">地主贏</div>
                 <div class="box-item winner" onclick="setWinner('farmers', this)">農民贏</div>
             </div>
-            <div style="margin:15px 0 5px 0;">🚀 火箭 x2 <input type="checkbox" id="rocket"> | 🌸 春天 x2 <input type="checkbox" id="spring"></div>
-            <div>💣 炸彈: <b id="bombVal">0</b> <input type="range" id="bombs" min="0" max="7" value="0" style="width:100%" oninput="bombVal.innerText=this.value"></div>
-            <button class="btn-main" onclick="submitRound()">確認提交</button>
+
+            <div style="margin:15px 0 5px 0; font-size:0.85rem; display:flex; gap:10px;">
+                <label><input type="checkbox" id="rocket"> 🚀 火箭</label>
+                <label><input type="checkbox" id="spring"> 🌸 春天</label>
+            </div>
+
+            <div style="margin-top:10px;">
+                <span>💣 炸彈: <b id="bombVal">0</b></span>
+                <input type="range" id="bombs" min="0" max="7" value="0" style="width:100%" oninput="bombVal.innerText=this.value">
+            </div>
+
+            <button class="btn-main" onclick="submitRound()">提交回合</button>
         </div>
 
         <div class="card">
@@ -122,40 +147,56 @@
     async function fetchSessions() {
         const { data } = await _supabase.from('sessions').select('*').order('created_at', { ascending: false });
         document.getElementById('sessionList').innerHTML = data?.map(s => `
-            <div class="session-item" onclick="enterSession('${s.name}', ${s.base_score})">
+            <div class="session-item" onclick="checkAndEnter('${s.name}', ${s.base_score})">
                 <b>🐾 ${s.name}</b>
                 <span style="color:var(--poodle-accent)">底分:${s.base_score} ></span>
             </div>
         `).join('') || "目前無賽局";
     }
 
-    async function createSession() {
-        const name = document.getElementById('newSessionInput').value.trim();
-        const base = parseInt(document.getElementById('baseScoreInput').value);
-        if(!name) return alert("請輸入名稱");
-        const { error } = await _supabase.from('sessions').insert([{ name, base_score: base }]);
-        if(error) alert("建立失敗"); else fetchSessions();
+    function setMe(v, el) { 
+        myName = v; 
+        document.querySelectorAll('#lobbyMeSelector .box-item').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('meDisplay').innerText = `已選擇身分：${v}`;
+        document.getElementById('headerMe').innerText = `操作者：${v}`;
+    }
+
+    function checkAndEnter(name, base) {
+        if(!myName) return alert("請先在上方選擇您的身分！");
+        enterSession(name, base);
     }
 
     function enterSession(name, base) {
         currentSession = name; currentBase = base;
-        document.getElementById('currentSessionTitle').innerText = `賽局：${name}`;
-        showLobby(); // 切換狀態
+        document.getElementById('currentSessionTitle').innerText = `賽局：${name} (底分:${base})`;
         document.getElementById('lobbyPage').classList.remove('active');
         document.getElementById('gamePage').classList.add('active');
         refreshGameData();
     }
 
-    function setMe(v, el) { myName = v; highlight('meSelector', el); }
-    function setLandlord(v, el) { selectedLandlord = v; highlight('landlordSelector', el); }
-    function setWinner(v, el) { selectedWinner = v; highlight('winnerSelector', el); }
-    function highlight(pId, el) {
-        document.querySelectorAll(`#${pId} .box-item`).forEach(b => b.classList.remove('active'));
+    async function createSession() {
+        if(!myName) return alert("請先選擇您的身分！");
+        const name = document.getElementById('newSessionInput').value.trim();
+        const base = parseInt(document.getElementById('baseScoreInput').value);
+        if(!name) return alert("請輸入名稱");
+        const { error } = await _supabase.from('sessions').insert([{ name, base_score: base }]);
+        if(error) alert("建立失敗(可能名稱重複)"); else fetchSessions();
+    }
+
+    function setLandlord(v, el) { 
+        selectedLandlord = v; 
+        document.querySelectorAll('#landlordSelector .box-item').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    }
+    function setWinner(v, el) { 
+        selectedWinner = v; 
+        document.querySelectorAll('#winnerSelector .box-item').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
     }
 
     async function submitRound() {
-        if(!myName || !selectedLandlord || !selectedWinner) return alert("請完成選擇");
+        if(!selectedLandlord || !selectedWinner) return alert("請選擇地主與結果");
         const bombs = parseInt(document.getElementById('bombs').value);
         const power = bombs + (document.getElementById('rocket').checked ? 1 : 0) + (document.getElementById('spring').checked ? 1 : 0);
         await _supabase.from('history').insert([{
@@ -164,6 +205,7 @@
             points: currentBase * Math.pow(2, power)
         }]);
         refreshGameData();
+        // 重置
         document.getElementById('rocket').checked = false;
         document.getElementById('spring').checked = false;
         document.getElementById('bombs').value = 0;
@@ -172,53 +214,38 @@
 
     async function refreshGameData() {
         const { data } = await _supabase.from('history').select('*').eq('session_name', currentSession).order('created_at', { ascending: true });
-        
         let s = { A: 0, E: 0, D: 0 };
-        let stats = { A: { wins: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 }, E: { wins: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 }, D: { wins: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 } };
-        
-        let activeRounds = [];
+        let stats = { A: { w: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 }, E: { w: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 }, D: { w: 0, t: 0, lw: 0, lt: 0, fw: 0, ft: 0 } };
         let rCounter = 0;
 
-        const processedData = data?.map(h => {
+        const processed = data?.map(h => {
             if(!h.is_deleted) {
                 rCounter++;
                 const isLWin = h.win_loss === '贏';
                 const p = h.points;
-                const players = ['A', 'E', 'D'];
-                players.forEach(n => {
+                ['A','E','D'].forEach(n => {
                     stats[n].t++;
-                    if(h.landlord === n) { stats[n].lt++; if(isLWin) { stats[n].wins++; stats[n].lw++; } }
-                    else { stats[n].ft++; if(!isLWin) { stats[n].wins++; stats[n].fw++; } }
+                    if(h.landlord === n) { stats[n].lt++; if(isLWin) { stats[n].w++; stats[n].lw++; } }
+                    else { stats[n].ft++; if(!isLWin) { stats[n].w++; stats[n].fw++; } }
                 });
                 if(h.landlord === 'A') { s.A += (isLWin?p*2:-p*2); s.E += (isLWin?-p:p); s.D += (isLWin?-p:p); }
-                else if(h.landlord === 'E') { s.E += (isLWin?p*2:-p*2); s.A += (isWin?-p:p); s.D += (isWin?-p:p); } // Fix typo
+                else if(h.landlord === 'E') { s.E += (isLWin?p*2:-p*2); s.A += (isLWin?-p:p); s.D += (isLWin?-p:p); }
                 else if(h.landlord === 'D') { s.D += (isLWin?p*2:-p*2); s.A += (isLWin?-p:p); s.E += (isLWin?-p:p); }
-                
                 return { ...h, rNum: `R${rCounter}` };
             }
             return { ...h, rNum: 'DEL' };
-        });
-
-        // 重新修復總分計算中的變數名稱錯誤
-        s = { A: 0, E: 0, D: 0 };
-        data?.filter(h => !h.is_deleted).forEach(h => {
-            const isLWin = h.win_loss === '贏';
-            const p = h.points;
-            if(h.landlord === 'A') { s.A += (isLWin?p*2:-p*2); s.E += (isLWin?-p:p); s.D += (isLWin?-p:p); }
-            else if(h.landlord === 'E') { s.E += (isLWin?p*2:-p*2); s.A += (isLWin?-p:p); s.D += (isLWin?-p:p); }
-            else if(h.landlord === 'D') { s.D += (isLWin?p*2:-p*2); s.A += (isLWin?-p:p); s.E += (isLWin?-p:p); }
         });
 
         document.getElementById('scoreA').innerText = s.A;
         document.getElementById('scoreE').innerText = s.E;
         document.getElementById('scoreD').innerText = s.D;
 
-        const format = (w, t) => t === 0 ? "0%" : (w/t*100).toFixed(0) + "%";
+        const rate = (w, t) => t === 0 ? "0%" : (w/t*100).toFixed(0) + "%";
         document.getElementById('statsBody').innerHTML = ['A', 'E', 'D'].map(n => `
-            <tr><td><b>${n}</b></td><td>${stats[n].wins}</td><td>${format(stats[n].wins, stats[n].t)}</td><td>${format(stats[n].lw, stats[n].lt)}</td><td>${format(stats[n].fw, stats[n].ft)}</td></tr>
+            <tr><td><b>${n}</b></td><td>${stats[n].w}</td><td>${rate(stats[n].w, stats[n].t)}</td><td>${rate(stats[n].lw, stats[n].lt)}</td><td>${rate(stats[n].fw, stats[n].ft)}</td></tr>
         `).join('');
 
-        document.getElementById('roundHistory').innerHTML = [...processedData].reverse().map(h => `
+        document.getElementById('roundHistory').innerHTML = [...processed].reverse().map(h => `
             <div class="history-item ${h.is_deleted ? 'deleted' : ''}">
                 <div style="display:flex; align-items:center;">
                     <span class="round-num">${h.rNum}</span>
@@ -230,8 +257,7 @@
     }
 
     async function deleteRound(id) {
-        if(!myName) return alert("請選你是誰");
-        if(confirm("確定刪除？編號將自動回退。")) {
+        if(confirm("確定要刪除這回合？編號將自動回退。")) {
             await _supabase.from('history').update({ is_deleted: true, deleted_by: myName }).eq('id', id);
             refreshGameData();
         }
