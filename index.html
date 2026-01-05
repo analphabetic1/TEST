@@ -3,133 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>專業鬥地主計分系統</title>
+    <title>朋友鬥地主計分板</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #4a90e2; --success: #4caf50; --danger: #f44336; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; margin: 0; padding: 15px; }
+        :root { --primary: #4a90e2; --success: #4caf50; --danger: #f44336; --dark: #2c3e50; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; color: var(--dark); }
         .container { max-width: 500px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        h3 { margin-top: 0; font-size: 1.1rem; border-left: 4px solid var(--primary); padding-left: 10px; }
         
-        /* 身份選擇 */
-        .user-selector { display: flex; gap: 10px; margin-bottom: 15px; }
-        .user-btn { flex: 1; padding: 8px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; text-align: center; }
-        .user-btn.active { border-color: var(--primary); background: #eef5ff; }
+        /* 玩家選擇 */
+        .user-selector { display: flex; gap: 10px; margin: 15px 0; }
+        .user-btn { flex: 1; padding: 12px; border: 2px solid #eee; border-radius: 10px; cursor: pointer; text-align: center; font-weight: bold; transition: 0.3s; }
+        .user-btn.active { border-color: var(--primary); background: #eef5ff; color: var(--primary); }
 
         /* 計分板 */
-        .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; margin: 15px 0; }
-        .score-box { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
+        .score-box { background: #f8f9fa; padding: 15px 5px; border-radius: 12px; text-align: center; }
+        .score-num { font-size: 1.4rem; font-weight: bold; color: var(--primary); display: block; }
 
         /* 控制項 */
-        .control-group { margin: 15px 0; display: flex; align-items: center; justify-content: space-between; }
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        select, input[type="number"] { padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 1rem; }
+        
+        /* 滑桿與開關樣式 */
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-round { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider-round:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider-round { background-color: var(--success); }
-        input:checked + .slider-round:before { transform: translateX(26px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        input[type="range"] { width: 60%; }
+
+        /* 按鈕 */
+        .btn-submit { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        .btn-submit:active { transform: scale(0.98); opacity: 0.9; }
 
         /* 歷史紀錄 */
-        .history-list { font-size: 0.9rem; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
-        .history-item { padding: 5px 0; border-bottom: 1px solid #fafafa; display: flex; justify-content: space-between; }
+        .history-list { font-size: 0.85rem; max-height: 180px; overflow-y: auto; }
+        .history-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .tag { font-size: 0.7rem; padding: 2px 6px; background: #eee; border-radius: 4px; margin-left: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h3>👤 我是誰？</h3>
-        <div class="user-selector" id="meSelector">
-            <div class="user-btn" onclick="setMe('A')">A</div>
-            <div class="user-btn" onclick="setMe('E')">E</div>
-            <div class="user-btn" onclick="setMe('D')">D</div>
+        <h3>👤 登入身份</h3>
+        <div class="user-selector">
+            <div class="user-btn" onclick="setMe('A', this)">A</div>
+            <div class="user-btn" onclick="setMe('E', this)">E</div>
+            <div class="user-btn" onclick="setMe('D', this)">D</div>
         </div>
-        <p id="currentUserDisplay">請先選擇您的身份</p>
+        <small style="color: #888;">* 必須先選擇身份才能增加記錄</small>
     </div>
 
     <div class="card">
-        <h3>📊 目前總分</h3>
+        <h3>📊 即時總分</h3>
         <div class="score-grid">
-            <div>A<div id="scoreA" class="score-box">0</div></div>
-            <div>E<div id="scoreE" class="score-box">0</div></div>
-            <div>D<div id="scoreD" class="score-box">0</div></div>
+            <div class="score-box"><span>A</span><span id="scoreA" class="score-num">0</span></div>
+            <div class="score-box"><span>E</span><span id="scoreE" class="score-num">0</span></div>
+            <div class="score-box"><span>D</span><span id="scoreD" class="score-num">0</span></div>
         </div>
     </div>
 
     <div class="card">
-        <h3>🆕 新增局數</h3>
-        <div class="control-group">
-            地主：<select id="landlord"><option>A</option><option>E</option><option>D</option></select>
-            結果：<select id="winLoss"><option value="1">地主贏</option><option value="-1">地主輸</option></select>
+        <h3>🃏 增加局數記錄</h3>
+        <div class="row">
+            <span>地主：</span>
+            <select id="landlord"><option>A</option><option>E</option><option>D</option></select>
+            <select id="winLoss"><option value="1">贏了</option><option value="-1">輸了</option></select>
         </div>
-        
-        <div class="control-group">
+
+        <div class="row">
             <span>🚀 火箭 (x2)</span>
-            <label class="switch"><input type="checkbox" id="rocket"><span class="slider-round"></span></label>
+            <label class="switch"><input type="checkbox" id="rocket"><span class="slider"></span></label>
         </div>
 
-        <div class="control-group">
+        <div class="row">
             <span>🌸 春天 (x2)</span>
-            <label class="switch"><input type="checkbox" id="spring"><span class="slider-round"></span></label>
+            <label class="switch"><input type="checkbox" id="spring"><span class="slider"></span></label>
         </div>
 
-        <div class="control-group">
-            <span>💣 炸彈數量：<span id="bombVal">0</span></span>
+        <div class="row">
+            <span>💣 炸彈：<b id="bombVal" style="color:var(--danger)">0</b></span>
             <input type="range" id="bombs" min="0" max="5" value="0" oninput="bombVal.innerText=this.value">
         </div>
 
-        <button onclick="submitScore()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold;">確認上傳紀錄</button>
+        <div class="row">
+            <span>底分：</span>
+            <input type="number" id="baseScore" value="10" style="width: 80px;">
+        </div>
+
+        <button class="btn-submit" onclick="submitScore()">確認上傳</button>
     </div>
 
     <div class="card">
-        <h3>📜 歷史紀錄</h3>
-        <div id="historyList" class="history-list">載入中...</div>
+        <h3>📜 最近紀錄</h3>
+        <div id="historyList" class="history-list">讀取中...</div>
     </div>
 </div>
 
 <script>
-    const SUBAPASE_URL = "https://mmnauzvhnguffpmevrup.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tbmF1enZobmd1ZmZwbWV2cnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MjI1NjcsImV4cCI6MjA4MzE5ODU2N30.8GUyft8yVecvju7ecjcBwt1j2aqDL-WjThLA17iOcoE";
-    const supabase = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
+    // --- 配置區：請填入你的 Supabase 資料 ---
+    const SB_URL = "https://mmnauzvhnguffpmevrup.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tbmF1enZobmd1ZmZwbWV2cnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MjI1NjcsImV4cCI6MjA4MzE5ODU2N30.8GUyft8yVecvju7ecjcBwt1j2aqDL-WjThLA17iOcoE";
+    const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
     let myName = "";
 
-    function setMe(name) {
+    // 1. 設定使用者
+    function setMe(name, el) {
         myName = name;
         document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-        document.getElementById('currentUserDisplay').innerText = "當前操作者：" + name;
+        el.classList.add('active');
     }
 
+    // 2. 抓取數據
+    async function refreshData() {
+        // 抓總分
+        const { data: players } = await supabaseClient.from('players').select('*').order('id');
+        if(players) {
+            document.getElementById('scoreA').innerText = players[0].total_score;
+            document.getElementById('scoreE').innerText = players[1].total_score;
+            document.getElementById('scoreD').innerText = players[2].total_score;
+        }
+
+        // 抓歷史
+        const { data: history } = await supabaseClient.from('history').select('*').order('created_at', { ascending: false }).limit(10);
+        if(history) {
+            document.getElementById('historyList').innerHTML = history.map(h => `
+                <div class="history-item">
+                    <div>
+                        <b>${h.landlord}</b> ${h.win_loss === '贏' ? '<span style="color:red">贏</span>' : '<span style="color:green">輸</span>'} 
+                        <b>${h.points > 0 ? '+' : ''}${h.points}</b>
+                        <span class="tag">by ${h.added_by}</span>
+                    </div>
+                    <span style="color:#bbb; font-size:10px;">${new Date(h.created_at).toLocaleTimeString()}</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    // 3. 上傳紀錄
     async function submitScore() {
-        if(!myName) return alert("請先選擇你是誰！");
+        if(!myName) return alert("請先選擇身份！");
         
         const landlord = document.getElementById('landlord').value;
         const winLoss = parseInt(document.getElementById('winLoss').value);
+        const base = parseInt(document.getElementById('baseScore').value);
         const hasRocket = document.getElementById('rocket').checked;
         const hasSpring = document.getElementById('spring').checked;
         const bombCount = parseInt(document.getElementById('bombs').value);
+
+        // 計算分數 (底分 * 2^所有翻倍因素)
+        let power = (hasRocket ? 1 : 0) + (hasSpring ? 1 : 0) + bombCount;
+        let finalPoints = base * Math.pow(2, power);
         
-        // 計算倍數：基礎 1 * 火箭(2) * 春天(2) * 2^炸彈數
-        let multiplier = 1;
-        if(hasRocket) multiplier *= 2;
-        if(hasSpring) multiplier *= 2;
-        multiplier *= Math.pow(2, bombCount);
+        // 準備更新數據
+        // 地主贏：地主得 2x，農民各扣 1x
+        // 地主輸：地主扣 2x，農民各得 1x
+        let pA = 0, pE = 0, pD = 0;
+        let winStr = winLoss === 1 ? '贏' : '輸';
+        
+        if (landlord === 'A') { pA = finalPoints * 2 * winLoss; pE = -finalPoints * winLoss; pD = -finalPoints * winLoss; }
+        else if (landlord === 'E') { pE = finalPoints * 2 * winLoss; pA = -finalPoints * winLoss; pD = -finalPoints * winLoss; }
+        else { pD = finalPoints * 2 * winLoss; pA = -finalPoints * winLoss; pE = -finalPoints * winLoss; }
 
-        const baseScore = 10; // 假設底分 10
-        const points = baseScore * multiplier * winLoss;
-
-        // 1. 寫入歷史紀錄
-        await supabase.from('history').insert([{
-            added_by: myName, landlord, is_rocket: hasRocket, is_spring: hasSpring, bombs: bombCount, final_points: points
+        // 寫入資料庫
+        const { error } = await supabaseClient.from('history').insert([{
+            added_by: myName, landlord, win_loss: winStr, points: (landlord === myName ? pA : (myName==='A'?pA:myName==='E'?pE:pD)), 
+            is_rocket: hasRocket, is_spring: hasSpring, bombs: bombCount
         }]);
 
-        // 2. 更新總分 (這部分邏輯通常在後端或由前端加總歷史紀錄，這裡簡化處理)
-        alert("紀錄成功！");
-        location.reload(); // 簡單讓它重新抓取數據
+        // 更新總分 (簡單做法：直接加給 players 表)
+        // 註：這部分建議在 Supabase 用 RPC 或多個 update，這裡先做歷史呈現。
+        // 為簡化演示，我們假設總分是透過歷史累積算的，或在此發送三個 update
+        await updateScore('A', pA);
+        await updateScore('E', pE);
+        await updateScore('D', pD);
+
+        if(!error) {
+            alert("上傳成功！");
+            resetForm();
+            refreshData();
+        }
     }
 
-    // 這裡還需要加上從 Supabase 抓取資料與 Realtime 監聽的代碼...
+    async function updateScore(name, offset) {
+        const { data } = await supabaseClient.from('players').select('total_score').eq('name', name).single();
+        await supabaseClient.from('players').update({ total_score: data.total_score + offset }).eq('name', name);
+    }
+
+    function resetForm() {
+        document.getElementById('rocket').checked = false;
+        document.getElementById('spring').checked = false;
+        document.getElementById('bombs').value = 0;
+        document.getElementById('bombVal').innerText = "0";
+    }
+
+    // 啟動與即時監聽
+    refreshData();
+    supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: '*' }, () => refreshData()).subscribe();
+
 </script>
 </body>
 </html>
