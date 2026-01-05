@@ -7,117 +7,111 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #4a90e2; --success: #4caf50; --danger: #f44336; --bg: #f4f7f9; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; }
         .page { display: none; padding: 15px; max-width: 500px; margin: auto; }
         .page.active { display: block; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        
-        /* 大廳樣式 */
         .session-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin-bottom: 10px; border-radius: 10px; cursor: pointer; border: 1px solid #eee; }
-        .session-item:active { background: #f0f0f0; }
-
-        /* 按鈕樣式 */
         .btn { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
         .btn-primary { background: var(--primary); color: white; width: 100%; }
-        .btn-outline { border: 1px solid var(--primary); color: var(--primary); background: transparent; }
-        .btn-del { background: #ffeded; color: var(--danger); border: none; padding: 5px 10px; border-radius: 5px; }
-
-        /* 方塊式選擇器 */
+        .btn-del { background: #ffeded; color: var(--danger); padding: 5px 10px; border-radius: 5px; }
         .box-selector { display: flex; gap: 8px; margin: 10px 0; }
         .box-item { flex: 1; padding: 15px 5px; border: 2px solid #eee; border-radius: 10px; text-align: center; cursor: pointer; font-weight: bold; }
         .box-item.active { border-color: var(--primary); background: #eef5ff; color: var(--primary); }
         .box-item.winner.active { border-color: var(--success); background: #f0f9f0; color: var(--success); }
-
-        /* 計分板 */
         .score-grid { display: flex; justify-content: space-around; background: #2c3e50; color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
         .score-val { font-size: 1.5rem; display: block; }
-
-        /* 歷史紀錄 */
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
     <div id="lobbyPage" class="page active">
-        <h2 style="text-align:center">🎴 鬥地主計分大廳</h2>
+        <h2 style="text-align:center">🎴 賽局大廳</h2>
         <div class="card">
             <h3>新增賽局</h3>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="newSessionInput" placeholder="輸入日期或名稱 (如 0101)" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;">
+                <input type="text" id="newSessionInput" placeholder="賽局名稱 (如 0101)" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;">
                 <button class="btn btn-primary" style="width:auto" onclick="createSession()">建立</button>
             </div>
         </div>
-        <h3>歷史賽局列表</h3>
-        <div id="sessionList">載入中...</div>
+        <div id="sessionList">連線中...</div>
     </div>
 
     <div id="gamePage" class="page">
-        <button class="btn btn-outline" onclick="showLobby()" style="margin-bottom:15px;">⬅ 返回大廳</button>
-        <h2 id="currentSessionDisplay" style="margin:5px 0">賽局：---</h2>
-        
+        <button class="btn" onclick="showLobby()" style="background:#ddd; margin-bottom:10px;">⬅ 返回大廳</button>
+        <h2 id="currentSessionDisplay">---</h2>
         <div class="score-grid">
             <div style="text-align:center">A<span id="scoreA" class="score-val">0</span></div>
             <div style="text-align:center">E<span id="scoreE" class="score-val">0</span></div>
             <div style="text-align:center">D<span id="scoreD" class="score-val">0</span></div>
         </div>
-
         <div class="card">
-            <h3>我是誰？(操作者)</h3>
+            <h3>我是誰？</h3>
             <div class="box-selector" id="meSelector">
                 <div class="box-item" onclick="setMe('A')">A</div>
                 <div class="box-item" onclick="setMe('E')">E</div>
                 <div class="box-item" onclick="setMe('D')">D</div>
             </div>
-
-            <h3>地主是誰？</h3>
+            <h3>地主</h3>
             <div class="box-selector" id="landlordSelector">
                 <div class="box-item" onclick="setLandlord('A')">A</div>
                 <div class="box-item" onclick="setLandlord('E')">E</div>
                 <div class="box-item" onclick="setLandlord('D')">D</div>
             </div>
-
-            <h3>誰贏了？</h3>
+            <h3>結果</h3>
             <div class="box-selector" id="winnerSelector">
                 <div class="box-item winner" onclick="setWinner('landlord')">地主贏</div>
                 <div class="box-item winner" onclick="setWinner('farmers')">農民贏</div>
             </div>
-
-            <div style="margin: 15px 0;">
-                <label><input type="checkbox" id="rocket"> 🚀 火箭 x2</label> &nbsp;
-                <label><input type="checkbox" id="spring"> 🌸 春天 x2</label>
+            <div style="margin:15px 0;">
+                🚀<input type="checkbox" id="rocket"> 火箭 | 🌸<input type="checkbox" id="spring"> 春天 | 💣炸彈: <b id="bombVal">0</b>
+                <input type="range" id="bombs" min="0" max="7" value="0" style="width:100%" oninput="bombVal.innerText=this.value">
             </div>
-
-            <div>
-                <span>💣 炸彈數量: <b id="bombVal" style="color:red">0</b></span>
-                <input type="range" id="bombs" min="0" max="7" value="0" step="1" style="width:100%" oninput="bombVal.innerText=this.value">
-            </div>
-
-            <button class="btn btn-primary" style="margin-top:20px" onclick="submitRound()">提交紀錄</button>
+            <button class="btn btn-primary" onclick="submitRound()">提交紀錄</button>
         </div>
-
-        <div class="card">
-            <h3>本局回合紀錄</h3>
-            <div id="roundHistory"></div>
-        </div>
+        <div id="roundHistory"></div>
     </div>
 
 <script>
-    // 修正後的 API 連線資訊
     const SB_URL = "https://mmnauzvhnguffpmevrup.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tbmF1enZobmd1ZmZwbWV2cnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MjI1NjcsImV4cCI6MjA4MzE5ODU2N30.8GUyft8yVecvju7ecjcBwt1j2aqDL-WjThLA17iOcoE";
-    const supabase = supabase.createClient(SB_URL, SB_KEY);
+    const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-    let currentSession = "";
-    let myName = "", selectedLandlord = "", selectedWinner = "";
+    let currentSession = "", myName = "", selectedLandlord = "", selectedWinner = "";
 
-    // --- 頁面跳轉邏輯 ---
     function showLobby() {
         document.getElementById('lobbyPage').classList.add('active');
         document.getElementById('gamePage').classList.remove('active');
         fetchSessions();
     }
 
-    async function enterSession(name) {
+    async function fetchSessions() {
+        const { data, error } = await _supabase.from('sessions').select('*').order('created_at', { ascending: false });
+        if(error) { document.getElementById('sessionList').innerText = "連線失敗: " + error.message; return; }
+        document.getElementById('sessionList').innerHTML = data.length ? data.map(s => `
+            <div class="session-item">
+                <div onclick="enterSession('${s.name}')" style="flex:1"><b>${s.name}</b></div>
+                <button class="btn-del" onclick="deleteSession('${s.name}')">刪除</button>
+            </div>
+        `).join('') : "目前無賽局";
+    }
+
+    async function createSession() {
+        const name = document.getElementById('newSessionInput').value.trim();
+        if(!name) return;
+        const { error } = await _supabase.from('sessions').insert([{ name }]);
+        if(error) alert("建立失敗: " + error.message);
+        document.getElementById('newSessionInput').value = "";
+        fetchSessions();
+    }
+
+    async function deleteSession(name) {
+        if(!confirm(`刪除 ${name}?`)) return;
+        await _supabase.from('sessions').delete().eq('name', name);
+        fetchSessions();
+    }
+
+    function enterSession(name) {
         currentSession = name;
         document.getElementById('currentSessionDisplay').innerText = "賽局：" + name;
         document.getElementById('lobbyPage').classList.remove('active');
@@ -125,65 +119,24 @@
         refreshGameData();
     }
 
-    // --- 大廳功能 ---
-    async function fetchSessions() {
-        const { data } = await supabase.from('sessions').select('*').order('created_at', { ascending: false });
-        const list = document.getElementById('sessionList');
-        list.innerHTML = data.map(s => `
-            <div class="session-item">
-                <div onclick="enterSession('${s.name}')" style="flex:1"><b>${s.name}</b> <small style="color:#999">${new Date(s.created_at).toLocaleDateString()}</small></div>
-                <button class="btn-del" onclick="deleteSession('${s.name}')">刪除</button>
-            </div>
-        `).join('');
-    }
-
-    async function createSession() {
-        const name = document.getElementById('newSessionInput').value.trim();
-        if(!name) return;
-        const { error } = await supabase.from('sessions').insert([{ name }]);
-        if(error) alert("名稱重複或錯誤");
-        document.getElementById('newSessionInput').value = "";
-        fetchSessions();
-    }
-
-    async function deleteSession(name) {
-        if(!confirm(`確定要刪除整個 ${name} 賽局紀錄嗎？`)) return;
-        await supabase.from('sessions').delete().eq('name', name);
-        await supabase.from('history').delete().eq('session_name', name); // 同步刪除裡面的回合
-        fetchSessions();
-    }
-
-    // --- 遊戲功能 ---
-    function setMe(val) { myName = val; highlight('meSelector', val, '我是 '); }
-    function setLandlord(val) { selectedLandlord = val; highlight('landlordSelector', val); }
-    function setWinner(val) { selectedWinner = val; highlight('winnerSelector', val === 'landlord' ? '地主贏' : '農民贏'); }
-
-    function highlight(id, val, prefix = "") {
-        document.querySelectorAll(`#${id} .box-item`).forEach(el => el.classList.toggle('active', el.innerText === prefix + val));
-    }
+    function setMe(v) { myName = v; highlight('meSelector', v); }
+    function setLandlord(v) { selectedLandlord = v; highlight('landlordSelector', v); }
+    function setWinner(v) { selectedWinner = v; highlight('winnerSelector', v === 'landlord' ? '地主贏' : '農民贏'); }
+    function highlight(id, v) { document.querySelectorAll(`#${id} .box-item`).forEach(el => el.classList.toggle('active', el.innerText.includes(v))); }
 
     async function submitRound() {
-        if(!myName || !selectedLandlord || !selectedWinner) return alert("請完成選擇");
+        if(!myName || !selectedLandlord || !selectedWinner) return alert("請選填欄位");
         const bombs = parseInt(document.getElementById('bombs').value);
-        const rocket = document.getElementById('rocket').checked;
-        const spring = document.getElementById('spring').checked;
-        const points = 10 * Math.pow(2, bombs + (rocket?1:0) + (spring?1:0));
-
-        await supabase.from('history').insert([{
+        const points = 10 * Math.pow(2, bombs + (document.getElementById('rocket').checked ? 1 : 0) + (document.getElementById('spring').checked ? 1 : 0));
+        await _supabase.from('history').insert([{
             session_name: currentSession, added_by: myName, landlord: selectedLandlord,
-            win_loss: selectedWinner === 'landlord' ? '贏' : '輸',
-            points, bombs, is_rocket: rocket, is_spring: spring
+            win_loss: selectedWinner === 'landlord' ? '贏' : '輸', points
         }]);
         refreshGameData();
-        // 重置欄位
-        document.getElementById('rocket').checked = false;
-        document.getElementById('spring').checked = false;
-        document.getElementById('bombs').value = 0;
-        document.getElementById('bombVal').innerText = "0";
     }
 
     async function refreshGameData() {
-        const { data } = await supabase.from('history').select('*').eq('session_name', currentSession).order('created_at', { ascending: false });
+        const { data } = await _supabase.from('history').select('*').eq('session_name', currentSession).order('created_at', { ascending: false });
         let s = { A: 0, E: 0, D: 0 };
         data?.forEach(h => {
             const isWin = h.win_loss === '贏';
@@ -195,29 +148,18 @@
         document.getElementById('scoreA').innerText = s.A;
         document.getElementById('scoreE').innerText = s.E;
         document.getElementById('scoreD').innerText = s.D;
-        
-        document.getElementById('roundHistory').innerHTML = data.map(h => `
-            <div class="history-item">
-                <span>${h.landlord} ${h.win_loss} ${h.points}分 (by ${h.added_by})</span>
-                <button class="btn-del" onclick="deleteRound('${h.id}')">刪除</button>
-            </div>
-        `).join('');
+        document.getElementById('roundHistory').innerHTML = data.map(h => `<div class="card">${h.landlord}${h.win_loss} ${h.points}分 <button class="btn-del" onclick="deleteRound('${h.id}')">刪除</button></div>`).join('');
     }
 
     async function deleteRound(id) {
-        if(!confirm("刪除這回合？")) return;
-        await supabase.from('history').delete().eq('id', id);
-        refreshGameData();
+        if(confirm("刪除這回合?")) { await _supabase.from('history').delete().eq('id', id); refreshGameData(); }
     }
 
-    // 初始化
     fetchSessions();
-    // 即時監聽
-    supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        if(document.getElementById('lobbyPage').classList.contains('active')) fetchSessions();
-        if(document.getElementById('gamePage').classList.contains('active')) refreshGameData();
+    _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        if(document.getElementById('lobbyPage').offsetParent) fetchSessions();
+        if(document.getElementById('gamePage').offsetParent) refreshGameData();
     }).subscribe();
-
 </script>
 </body>
 </html>
