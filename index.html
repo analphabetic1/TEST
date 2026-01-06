@@ -40,15 +40,37 @@
         .session-item { padding: 18px; background: var(--white); border-radius: 15px; margin-bottom: 12px; border: 1px solid var(--poodle-light); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         
         /* 歷史紀錄樣式優化 */
-        .history-container { padding: 0; } /* 讓內部的 item 貼近邊緣或統一由 card 控制 */
+        .history-container { padding: 0; }
         .history-item { border-bottom: 1px solid #efebe9; padding: 15px 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
         .history-item:last-child { border-bottom: none; }
         .round-num { display: inline-block; width: 34px; height: 34px; line-height: 34px; background: var(--poodle-light); color: var(--poodle-brown); border-radius: 50%; text-align: center; font-weight: bold; margin-right: 12px; font-size: 0.8rem; flex-shrink: 0; }
         .history-item.deleted { opacity: 0.4; filter: grayscale(1); }
         .del-btn { background: #FFEBEE; color: var(--danger); border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; }
+
+        /* 密碼擋板樣式 */
+        #passwordOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--poodle-cream); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .pw-card { width: 85%; max-width: 320px; text-align: center; }
+        #pwInput { 
+            width: 100%; padding: 12px; box-sizing: border-box; 
+            border-radius: 10px; border: 1px solid var(--poodle-light); 
+            margin-bottom: 15px; font-size: 1rem;
+        }
     </style>
 </head>
 <body>
+
+    <div id="passwordOverlay">
+        <div class="card pw-card">
+            <h3>🔒 進入權限驗證</h3>
+            <input type="password" id="pwInput" placeholder="1688">
+            <button class="btn-main" onclick="checkPassword()">進入系統</button>
+            <p id="pwMsg" style="color:var(--danger); font-size:0.8rem; margin-top:10px;"></p>
+        </div>
+    </div>
 
     <div id="lobbyPage" class="page active">
         <h2>🐾 鬥地主計分大廳</h2>
@@ -126,6 +148,29 @@
     </div>
 
 <script>
+    // --- 密碼與權限邏輯 ---
+    const ACCESS_PASSWORD = "你的密碼"; // 請在此設定你的密碼
+    
+    function checkPassword() {
+        const input = document.getElementById('pwInput').value;
+        const msg = document.getElementById('pwMsg');
+        
+        if (input === ACCESS_PASSWORD) {
+            localStorage.setItem('poodle_score_auth', 'permanent_verified');
+            document.getElementById('passwordOverlay').style.display = 'none';
+        } else {
+            msg.innerText = "密碼錯誤，請重新輸入";
+        }
+    }
+
+    function validateAuth() {
+        const authStatus = localStorage.getItem('poodle_score_auth');
+        if (authStatus === 'permanent_verified') {
+            document.getElementById('passwordOverlay').style.display = 'none';
+        }
+    }
+
+    // --- 原有 Supabase 邏輯 ---
     const SB_URL = "https://mmnauzvhnguffpmevrup.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tbmF1enZobmd1ZmZwbWV2cnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MjI1NjcsImV4cCI6MjA4MzE5ODU2N30.8GUyft8yVecvju7ecjcBwt1j2aqDL-WjThLA17iOcoE";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -238,7 +283,6 @@
             <tr><td><b>${n}</b></td><td>${stats[n].w}</td><td>${rate(stats[n].w, stats[n].t)}</td><td>${rate(stats[n].lw, stats[n].lt)}</td><td>${rate(stats[n].fw, stats[n].ft)}</td></tr>
         `).join('');
 
-        // 渲染歷史紀錄：加入「新增者」顯示
         document.getElementById('roundHistory').innerHTML = [...processed].reverse().map(h => `
             <div class="history-item ${h.is_deleted ? 'deleted' : ''}">
                 <div style="display:flex; align-items:center;">
@@ -262,8 +306,12 @@
         }
     }
 
-    fetchSessions();
-    _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, () => refreshGameData()).subscribe();
+    // 初始化啟動
+    window.onload = () => {
+        validateAuth(); // 檢查永久授權
+        fetchSessions();
+        _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, () => refreshGameData()).subscribe();
+    };
 </script>
 </body>
 </html>
