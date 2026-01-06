@@ -66,7 +66,7 @@
     <div id="passwordOverlay">
         <div class="card pw-card">
             <h3>🔒 進入權限驗證</h3>
-            <input type="password" id="pwInput" placeholder="1688">
+            <input type="password" id="pwInput" placeholder="請輸入通關密碼">
             <button class="btn-main" onclick="checkPassword()">進入系統</button>
             <p id="pwMsg" style="color:var(--danger); font-size:0.8rem; margin-top:10px;"></p>
         </div>
@@ -149,7 +149,7 @@
 
 <script>
     // --- 密碼與權限邏輯 ---
-    const ACCESS_PASSWORD = "你的密碼"; // 請在此設定你的密碼
+    const ACCESS_PASSWORD = "1688"; // 請在此設定你的密碼
     
     function checkPassword() {
         const input = document.getElementById('pwInput').value;
